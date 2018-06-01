@@ -86,6 +86,13 @@ options:
     default: "yes"
     version_added: "2.0"
     type: bool
+  trust_server_cert:
+    description:
+     - if C(yes), server tls certificates are blindly accepted
+    type: bool
+    default: yes
+    version_added: "2.6"
+    aliases: [ insecure ]
 '''
 
 EXAMPLES = '''
@@ -128,13 +135,14 @@ class Subversion(object):
         bits = [
             self.svn_path,
             '--non-interactive',
-            '--trust-server-cert',
             '--no-auth-cache',
         ]
         if self.username:
             bits.extend(["--username", self.username])
         if self.password:
             bits.extend(["--password", self.password])
+        if self.module.trust_server_cert:
+            bits.extend(["--trust-server-cert"])
         bits.extend(args)
         rc, out, err = self.module.run_command(bits, check_rc)
         if check_rc:
@@ -226,6 +234,7 @@ def main():
             update=dict(type='bool', default=True),
             switch=dict(type='bool', default=True),
             in_place=dict(type='bool', default=False),
+            trust_server_cert=dict(type='bool', default=True, aliases=['insecure'])
         ),
         supports_check_mode=True,
     )
@@ -242,6 +251,8 @@ def main():
     checkout = module.params['checkout']
     update = module.params['update']
     in_place = module.params['in_place']
+    trust_server_cert = module.params['trust_server_cert']
+
 
     # We screenscrape a huge amount of svn commands so use C locale anytime we
     # call run_command()
